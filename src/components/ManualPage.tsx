@@ -225,6 +225,16 @@ export function ManualPage({ onClose }: ManualPageProps) {
                       <div className="text-gray-600">user1234 / password123</div>
                     </div>
                   </div>
+                  <div className="mt-3">
+                    <button
+                      onClick={handleStartTour}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors font-medium uppercase text-sm"
+                      style={{ backgroundColor: '#b6c2fc' }}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>ЗАПУСТИТЬ ОБУЧЕНИЕ</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -291,6 +301,16 @@ export function ManualPage({ onClose }: ManualPageProps) {
                   </div>
                   <div className="text-center text-sm text-gray-600 uppercase">
                     KANBAN ДОСКА - ПЕРЕТАСКИВАЙТЕ ЗАДАЧИ МЕЖДУ КОЛОНКАМИ
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      onClick={handleStartTour}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors font-medium uppercase text-sm"
+                      style={{ backgroundColor: '#b6c2fc' }}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>ПОКАЗАТЬ В ОБУЧЕНИИ</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -647,6 +667,17 @@ export function ManualPage({ onClose }: ManualPageProps) {
                       <li>Поддержка основных форматов файлов</li>
                     </ul>
                   </div>
+                </div>
+                
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={handleStartTour}
+                    className="flex items-center space-x-2 px-6 py-3 text-white rounded-lg transition-colors font-medium uppercase mx-auto"
+                    style={{ backgroundColor: '#b6c2fc' }}
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    <span>ПОВТОРИТЬ ИНТЕРАКТИВНОЕ ОБУЧЕНИЕ</span>
+                  </button>
                 </div>
               </div>
             </div>

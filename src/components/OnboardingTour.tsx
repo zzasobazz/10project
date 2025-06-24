@@ -6,8 +6,9 @@ interface OnboardingStep {
   title: string;
   description: string;
   target: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
+  position: 'top' | 'bottom' | 'left' | 'right' | 'center';
   action?: () => void;
+  closeModals?: boolean;
 }
 
 interface OnboardingTourProps {
@@ -20,7 +21,7 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
   const [currentStep, setCurrentStep] = useState(0);
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [popupPosition, setPopupPosition] = useState({ top: '50%', left: '50%' });
+  const [popupPosition, setPopupPosition] = useState({ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' });
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,61 +33,83 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
 
   useEffect(() => {
     if (isOpen && steps[currentStep]) {
-      const element = document.querySelector(steps[currentStep].target) as HTMLElement;
+      const step = steps[currentStep];
+      
+      // Закрываем модальные окна если требуется
+      if (step.closeModals) {
+        // Закрываем все модальные окна
+        const modals = document.querySelectorAll('[role="dialog"], .fixed.inset-0');
+        modals.forEach(modal => {
+          const closeButton = modal.querySelector('button[aria-label="Close"], button:has(svg)');
+          if (closeButton && modal.classList.contains('z-50')) {
+            (closeButton as HTMLElement).click();
+          }
+        });
+      }
+
+      const element = document.querySelector(step.target) as HTMLElement;
       setTargetElement(element);
       
       if (element) {
         // Прокручиваем к элементу
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         
-        // Добавляем подсветку - делаем элемент ярче, а не темнее
+        // Добавляем подсветку с правильными стилями
         element.style.position = 'relative';
         element.style.zIndex = '1001';
-        element.style.boxShadow = '0 0 0 4px rgba(182, 194, 252, 0.8)';
+        element.style.boxShadow = '0 0 0 3px rgba(182, 194, 252, 0.6), 0 0 20px rgba(182, 194, 252, 0.3)';
         element.style.borderRadius = '8px';
-        element.style.backgroundColor = 'rgba(182, 194, 252, 0.2)';
-        element.style.transform = 'scale(1.02)';
+        element.style.backgroundColor = element.style.backgroundColor || 'rgba(182, 194, 252, 0.1)';
         element.style.transition = 'all 0.3s ease';
         
-        // Блокируем клики на другие элементы, кроме выделенного
+        // Блокируем клики на другие элементы
         const allInteractiveElements = document.querySelectorAll('button, a, [role="button"], input, select, textarea');
         allInteractiveElements.forEach(btn => {
           if (!element.contains(btn) && !btn.closest('.onboarding-popup')) {
             (btn as HTMLElement).style.pointerEvents = 'none';
-            (btn as HTMLElement).style.opacity = '0.3';
-            (btn as HTMLElement).style.filter = 'grayscale(100%)';
+            (btn as HTMLElement).style.opacity = '0.5';
+            (btn as HTMLElement).style.filter = 'grayscale(50%)';
           }
         });
         
-        // Вычисляем позицию попапа относительно элемента
+        // Вычисляем позицию попапа
         setTimeout(() => {
           const rect = element.getBoundingClientRect();
-          const step = steps[currentStep];
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const popupWidth = isMobile ? Math.min(350, viewportWidth - 32) : 400;
+          const popupHeight = 300; // Примерная высота попапа
+          
           let top = '50%';
           let left = '50%';
+          let transform = 'translate(-50%, -50%)';
           
-          if (!isMobile) {
+          if (!isMobile && step.position !== 'center') {
             switch (step.position) {
               case 'top':
-                top = `${Math.max(20, rect.top - 20)}px`;
-                left = `${rect.left + rect.width / 2}px`;
+                top = `${Math.max(20, rect.top - popupHeight - 20)}px`;
+                left = `${Math.min(Math.max(20, rect.left + rect.width / 2 - popupWidth / 2), viewportWidth - popupWidth - 20)}px`;
+                transform = 'none';
                 break;
               case 'bottom':
-                top = `${Math.min(window.innerHeight - 200, rect.bottom + 20)}px`;
-                left = `${rect.left + rect.width / 2}px`;
+                top = `${Math.min(viewportHeight - popupHeight - 20, rect.bottom + 20)}px`;
+                left = `${Math.min(Math.max(20, rect.left + rect.width / 2 - popupWidth / 2), viewportWidth - popupWidth - 20)}px`;
+                transform = 'none';
                 break;
               case 'left':
-                top = `${rect.top + rect.height / 2}px`;
-                left = `${Math.max(20, rect.left - 20)}px`;
+                top = `${Math.min(Math.max(20, rect.top + rect.height / 2 - popupHeight / 2), viewportHeight - popupHeight - 20)}px`;
+                left = `${Math.max(20, rect.left - popupWidth - 20)}px`;
+                transform = 'none';
                 break;
               case 'right':
-                top = `${rect.top + rect.height / 2}px`;
-                left = `${Math.min(window.innerWidth - 420, rect.right + 20)}px`;
+                top = `${Math.min(Math.max(20, rect.top + rect.height / 2 - popupHeight / 2), viewportHeight - popupHeight - 20)}px`;
+                left = `${Math.min(viewportWidth - popupWidth - 20, rect.right + 20)}px`;
+                transform = 'none';
                 break;
             }
           }
           
-          setPopupPosition({ top, left });
+          setPopupPosition({ top, left, transform });
         }, 100);
       }
     }
@@ -98,7 +121,6 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
         targetElement.style.boxShadow = '';
         targetElement.style.borderRadius = '';
         targetElement.style.backgroundColor = '';
-        targetElement.style.transform = '';
         targetElement.style.transition = '';
         
         // Восстанавливаем клики на все элементы
@@ -120,7 +142,7 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      onClose();
+      handleClose();
     }
   };
 
@@ -130,7 +152,24 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
     }
   };
 
-  const skipTour = () => {
+  const handleClose = () => {
+    // Восстанавливаем все стили
+    if (targetElement) {
+      targetElement.style.position = '';
+      targetElement.style.zIndex = '';
+      targetElement.style.boxShadow = '';
+      targetElement.style.borderRadius = '';
+      targetElement.style.backgroundColor = '';
+      targetElement.style.transition = '';
+      
+      const allInteractiveElements = document.querySelectorAll('button, a, [role="button"], input, select, textarea');
+      allInteractiveElements.forEach(btn => {
+        (btn as HTMLElement).style.pointerEvents = '';
+        (btn as HTMLElement).style.opacity = '';
+        (btn as HTMLElement).style.filter = '';
+      });
+    }
+    
     onClose();
   };
 
@@ -142,22 +181,18 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-30 z-1000" />
+      <div className="fixed inset-0 bg-black bg-opacity-40 z-1000" />
       
       {/* Tour popup */}
       <div 
         className="fixed z-1002 onboarding-popup"
         style={{
-          top: isMobile ? '50%' : popupPosition.top,
-          left: isMobile ? '50%' : popupPosition.left,
-          transform: isMobile ? 'translate(-50%, -50%)' : 
-            step.position === 'top' ? 'translate(-50%, -100%)' :
-            step.position === 'bottom' ? 'translate(-50%, 0%)' :
-            step.position === 'left' ? 'translate(-100%, -50%)' :
-            step.position === 'right' ? 'translate(0%, -50%)' :
-            'translate(-50%, -50%)',
+          top: popupPosition.top,
+          left: popupPosition.left,
+          transform: popupPosition.transform,
           maxWidth: isMobile ? '90vw' : '400px',
-          width: isMobile ? '90vw' : '400px'
+          width: isMobile ? '90vw' : '400px',
+          maxHeight: '90vh'
         }}
       >
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
@@ -174,7 +209,7 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
                 </div>
               </div>
               <button
-                onClick={skipTour}
+                onClick={handleClose}
                 className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -212,10 +247,10 @@ export function OnboardingTour({ isOpen, onClose, steps }: OnboardingTourProps) 
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={skipTour}
+                  onClick={handleClose}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors uppercase"
                 >
-                  ПРОПУСТИТЬ
+                  ЗАВЕРШИТЬ
                 </button>
                 
                 <button
@@ -251,11 +286,7 @@ export function useOnboarding() {
 
   useEffect(() => {
     const seen = localStorage.getItem('planify-onboarding-seen');
-    if (!seen) {
-      setIsOnboardingOpen(true);
-    } else {
-      setHasSeenOnboarding(true);
-    }
+    setHasSeenOnboarding(!!seen);
   }, []);
 
   const startOnboarding = () => {

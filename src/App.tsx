@@ -27,15 +27,22 @@ function AppContent() {
     }
   }, [isAuthenticated, getLastView]);
 
-  // Автоматический запуск онбординга для демо аккаунтов
+  // Автоматический запуск онбординга
   useEffect(() => {
     if (isAuthenticated && currentUser) {
       // Для демо аккаунтов всегда запускаем онбординг
       if (currentUser.username === 'admin123' || currentUser.username === 'user1234') {
-        // Небольшая задержка для корректной загрузки интерфейса
         setTimeout(() => {
           resetOnboarding();
         }, 500);
+      } else {
+        // Для новых пользователей запускаем онбординг при первом входе
+        const hasSeenOnboarding = localStorage.getItem('planify-onboarding-seen');
+        if (!hasSeenOnboarding) {
+          setTimeout(() => {
+            resetOnboarding();
+          }, 500);
+        }
       }
     }
   }, [isAuthenticated, currentUser, resetOnboarding]);
@@ -54,7 +61,7 @@ function AppContent() {
         title: 'Добро пожаловать в Planify!',
         description: 'Это профессиональное приложение для управления задачами. Давайте познакомимся с основными функциями.',
         target: 'body',
-        position: 'bottom' as const,
+        position: 'center' as const,
       },
       {
         id: 'create-task',
@@ -63,6 +70,14 @@ function AppContent() {
         target: '[data-tour="create-task"]',
         position: 'bottom' as const,
         action: () => setShowCreateModal(true),
+      },
+      {
+        id: 'task-modal',
+        title: 'Форма создания задачи',
+        description: 'Здесь вы можете заполнить все детали задачи: название, описание, приоритет, назначить исполнителей и установить срок выполнения.',
+        target: '.fixed.inset-0.z-50',
+        position: 'center' as const,
+        closeModals: true,
       },
       {
         id: 'board-selector',
@@ -110,7 +125,7 @@ function AppContent() {
           title: 'Функции администратора',
           description: 'Как администратор, вы имеете доступ к дополнительным функциям: управление пользователями, редактирование досок и добавление комментариев к задачам.',
           target: 'body',
-          position: 'bottom' as const,
+          position: 'center' as const,
         },
       ];
     } else {
@@ -122,7 +137,7 @@ function AppContent() {
           title: 'Возможности пользователя',
           description: 'Как пользователь, вы можете создавать и редактировать задачи, просматривать календарь и аналитику, а также управлять своим профилем.',
           target: 'body',
-          position: 'bottom' as const,
+          position: 'center' as const,
         },
       ];
     }
